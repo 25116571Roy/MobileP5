@@ -90,6 +90,48 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi Logout'),
+        content: const Text('Apakah Anda yakin ingin logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    await _storageService.deleteToken();
+    await _checkToken();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Logout berhasil. Token dihapus dari secure storage.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      ).then((_) => _checkToken());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,6 +204,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   backgroundColor: Colors.deepPurple,
                                   foregroundColor: Colors.white,
                                 ),
+                              )
+                            else
+                              OutlinedButton.icon(
+                                onPressed: _logout,
+                                icon: const Icon(Icons.logout),
+                                label: const Text('Logout'),
                               ),
                           ],
                         ),
