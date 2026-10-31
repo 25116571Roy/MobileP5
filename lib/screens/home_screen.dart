@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../services/secure_storage_service.dart';
+import 'login_screen.dart';
 import 'user_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -14,6 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _tokenController = TextEditingController();
   String? _savedToken;
   bool _hasToken = false;
+
   @override
   void initState() {
     super.initState();
@@ -29,10 +32,26 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _checkToken() async {
     final hasToken = await _storageService.hasToken();
     final token = await _storageService.getToken();
+    if (!mounted) return;
     setState(() {
       _hasToken = hasToken;
       _savedToken = token;
     });
+  }
+
+  Future<void> _openLogin() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
+    if (result == true) {
+      await _checkToken();
+    }
+  }
+
+  String get _tokenPreview {
+    final t = _savedToken ?? '';
+    return t.length > 10 ? '${t.substring(0, 10)}...' : t;
   }
 
   Future<void> _saveToken() async {
@@ -85,6 +104,73 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.person, color: Colors.deepPurple),
+                          SizedBox(width: 8),
+                          Text(
+                            'Status Login',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _hasToken ? Colors.green[50] : Colors.red[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: _hasToken ? Colors.green : Colors.red,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _hasToken ? Icons.check_circle : Icons.cancel,
+                              color: _hasToken ? Colors.green : Colors.red,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _hasToken
+                                    ? 'Sudah login (token tersimpan)'
+                                    : 'Belum login',
+                                style: TextStyle(
+                                  color: _hasToken
+                                      ? Colors.green[800]
+                                      : Colors.red[800],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            if (!_hasToken)
+                              ElevatedButton.icon(
+                                onPressed: _openLogin,
+                                icon: const Icon(Icons.login),
+                                label: const Text('Login'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.deepPurple,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               // Section 1: Secure Storage
               Card(
                 child: Padding(
@@ -164,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Expanded(
                               child: Text(
                                 _hasToken
-                                    ? 'Token tersimpan: ${_savedToken!.substring(0, 10)}...'
+                                    ? 'Token tersimpan: $_tokenPreview'
                                     : 'Belum ada token tersimpan',
                                 style: TextStyle(
                                   color: _hasToken
