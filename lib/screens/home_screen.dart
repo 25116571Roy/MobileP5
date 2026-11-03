@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/secure_storage_service.dart';
 import 'login_screen.dart';
+import 'post_list_screen.dart';
 import 'user_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -357,6 +358,27 @@ class _HomeScreenState extends State<HomeScreen> {
                           label: const Text('Lihat Daftar Pengguna'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const PostListScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.article),
+                          label: const Text('Lihat Daftar Post'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.indigo,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
