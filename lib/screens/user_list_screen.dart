@@ -12,13 +12,21 @@ class UserListScreen extends StatefulWidget {
 
 class _UserListScreenState extends State<UserListScreen> {
   final ApiService _apiService = ApiService();
+  final TextEditingController _searchController = TextEditingController();
   List<User> _users = [];
   bool _isLoading = true;
   String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
     _loadUsers();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUsers() async {
@@ -28,16 +36,30 @@ class _UserListScreenState extends State<UserListScreen> {
     });
     try {
       final users = await _apiService.getUsers();
+      if (!mounted) return;
       setState(() {
         _users = users;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
       });
     }
+  }
+
+  List<User> get _filteredUsers {
+    final query = _searchController.text.toLowerCase().trim();
+    if (query.isEmpty) {
+      return _users;
+    }
+    return _users.where((user) {
+      final nameMatches = user.name.toLowerCase().contains(query);
+      final emailMatches = user.email.toLowerCase().contains(query);
+      return nameMatches || emailMatches;
+    }).toList();
   }
 
   @override
@@ -109,20 +131,61 @@ class _UserListScreenState extends State<UserListScreen> {
       return const Center(child: Text('Tidak ada data pengguna'));
     }
     // Success state
-    return RefreshIndicator(
-      onRefresh: _loadUsers,
-      child: ListView.builder(
-        itemCount: _users.length,
-        itemBuilder: (context, index) {
-          final user = _users[index];
-          return UserCard(
-            user: user,
-            onTap: () {
-              _showUserDetail(user);
+    final filteredUsers = _filteredUsers;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Cari nama atau email...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {});
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+            ),
+            onChanged: (_) {
+              setState(() {});
             },
-          );
-        },
-      ),
+          ),
+        ),
+        Expanded(
+          child: filteredUsers.isEmpty
+              ? const Center(
+                  child: Text('Tidak ada pengguna yang cocok dengan pencarian'),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadUsers,
+                  child: ListView.builder(
+                    itemCount: filteredUsers.length,
+                    itemBuilder: (context, index) {
+                      final user = filteredUsers[index];
+                      return UserCard(
+                        user: user,
+                        onTap: () {
+                          _showUserDetail(user);
+                        },
+                      );
+                    },
+                  ),
+                ),
+        ),
+      ],
     );
   }
 
